@@ -1,0 +1,22 @@
+{
+  "name": "pixoo64",
+  "version": "1.0.0",
+  "description": "A node.js Library for Pixoo64 ",
+  "main": "pixoo.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Pixoo64",
+    "pixoo"
+  ],
+  "author": "Christopher Schulz (Byteschmiede)",
+  "license": "ISC",
+  "dependencies": {
+    "base64-js": "^1.5.1",
+    "canvas": "^2.11.0",
+    "enumify": "^2.0.0",
+    "request-promise-native": "^1.0.9",
+    "sharp": "^0.31.3"
+  }
+}
