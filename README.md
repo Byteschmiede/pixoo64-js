@@ -7,7 +7,7 @@ Pixoo is a powerful Node.js library for controlling the PIXOO LED matrix over HT
 
 To install Pixoo, simply use npm:
 
-`npm install pixoo` 
+`npm install pixoo64` 
 
 ## 🔨 Usage
 
