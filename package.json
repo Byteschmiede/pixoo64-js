@@ -1,6 +1,6 @@
 {
   "name": "pixoo64",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A node.js Library for Pixoo64 ",
   "main": "pixoo.js",
   "scripts": {

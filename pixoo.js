@@ -4,6 +4,7 @@ const sharp = require('sharp');
 const request = require('request-promise-native');
 
 const Palette = require('./_colors');
+const { deepStrictEqual } = require('assert');
 const retrieveGlyph = require('./_font').retrieveGlyph;
 const Simulator = require('./simulator').Simulator;
 const SimulatorConfig = require('./simulator').SimulatorConfig;
@@ -70,6 +71,8 @@ class Pixoo {
         // Generate URL
         this.url = `http://${address}/post`;
 
+
+        this.resetGifId();
         // Prefill the buffer
         this.fill();
 
@@ -134,14 +137,13 @@ class Pixoo {
 
             // Calculate the ratio to scale the image if needed
             let ratio = 1;
-            if (width > this.size , height > this.size) {
+            if (width > this.size, height > this.size) {
                 ratio = Math.min(this.size / width, this.size / height);
             }
 
             width = Math.floor(width * ratio);
             height = Math.floor(height * ratio);
 
-            console.log(width, height)
             // Load the image and resize it if needed
             let pipeline = sharp(path).resize(width, height);
             // Crop the image if needed
@@ -231,7 +233,7 @@ class Pixoo {
     }
 
     loadCounter() {
-        this.counter = this.simulated ? this.simulator.counter : parseInt(request.get(`http://${this.address}/getCounter`).text, 10);
+        this.counter = 10;
     }
 
     async push() {
@@ -258,50 +260,66 @@ class Pixoo {
             }));
         }
     }
-    async sendBuffer() {
-        // Add to the internal counter
-        this.counter = this.counter + 1;
 
-        // Check if we've passed the limit and reset the counter for the animation remotely
-        if (this.refresh_connection_automatically && this.counter >= this.__refresh_counter_limit) {
-            this.__resetCounter();
-            this.counter = 1;
-        }
-
-        if (this.debug) {
-        }
-
-        // If it's simulated, we don't need to actually push it to the divoom
-        if (this.simulated) {
-            await this.simulator.display(this.buffer, this.counter);
-
-            // Simulate this too I suppose
-            this.buffers_send = this.buffers_send + 1;
-            return;
-        }
-
-        // Encode the buffer to base64 encoding
+    resetGifId() {
         request.post({
             url: this.url,
             json: true,
-            body: {
+            body: { "Command": "Draw/ResetHttpGifId" },
+        });
+    }
+    async sendBuffer() {
+        return new Promise(async (resolve, reject) => {
+            console.time("Rendering");
+
+            // Add to the internal counter
+            this.counter = this.counter + 1;
+
+            // Check if we've passed the limit and reset the counter for the animation remotely
+            if (this.refresh_connection_automatically && this.counter >= this.__refresh_counter_limit) {
+                this.__resetCounter();
+                this.counter = 1;
+            }
+
+            if (this.debug) {
+            }
+
+            // If it's simulated, we don't need to actually push it to the divoom
+            if (this.simulated) {
+                await this.simulator.display(this.buffer, this.counter);
+
+                // Simulate this too I suppose
+                this.buffers_send = this.buffers_send + 1;
+                return;
+            }
+
+            // Encode the buffer to base64 encoding
+            let payload = {
                 Command: 'Draw/SendHttpGif',
                 PicNum: 1,
                 PicWidth: this.size,
                 PicOffset: 0,
                 PicID: this.counter,
                 PicSpeed: 1000,
-                PicData: base64.fromByteArray(new Uint8Array(this.buffer)).toString(),
-            },
-        }, (error, response, data) => {
-            if (data.error_code !== 0) {
-                this.__error(data);
-            } else {
-                this.buffers_send = this.buffers_send + 1;
-
-                if (this.debug) {
-                }
+                PicData: Buffer.from(this.buffer.flat()).toString('base64'),
             }
+
+            request.post({
+                url: this.url,
+                json: true,
+                body: payload,
+            }, (error, response, data) => {
+                if (data.error_code !== 0) {
+                    this.__error(data);
+                } else {
+                    this.buffers_send = this.buffers_send + 1;
+                    console.timeEnd("Rendering");
+                    if (this.debug) {
+                        console.log(response)
+                    }
+                    resolve();
+                }
+            });
         });
     }
 }
